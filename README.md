@@ -1,7 +1,7 @@
 # MİRAT
 # 🤖 Afet Arama Robotu
 
-Bu proje, **afetlerde enkaz altında kalan insanlara ulaşmayı kolaylaştırmak** için geliştirdiğimiz bir **arama-kurtarma robotudur**.  
+Bu proje, **Afetlerde enkaz altında kalan insanlara ulaşmayı kolaylaştırmak** için geliştirdiğimiz bir **Arama robotudur**.  
 
 ## 🎯 Amaç
 - Canlı tespiti ve ortam analizi  
@@ -15,7 +15,7 @@ Bu proje, **afetlerde enkaz altında kalan insanlara ulaşmayı kolaylaştırmak
 - Kablosuz iletişim desteği  
 
 ## 👥 Ekip
-Proje, **TEKNOFEST 2025 - Thunder Takımı** tarafından geliştirilmektedir.  
+Proje, **TEKNOFEST 2025 - Mirat Takımı** tarafından geliştirilmektedir.  
 Amacımız, **teknolojiyi insan hayatını kurtarmak için kullanmak**.  
 
 ---
