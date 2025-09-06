@@ -18,6 +18,7 @@ app.use(express.json());
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/robot', require('./routes/robotRoutes'));
+app.use('/api/lidar', require('./routes/lidarRoutes'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

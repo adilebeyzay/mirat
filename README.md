@@ -25,6 +25,13 @@ MiratApp, robot sensör ve kamera verilerini görüntüleyen bir mobil uygulamad
 - Hareket durumu takibi
 - Uzaktan robot kontrolü
 
+### 🗺️ Haritalama
+- LIDAR verilerini gerçek zamanlı görüntüleme
+- 360° tarama simülasyonu
+- Mesafe tabanlı renk kodlaması
+- Harita verilerini kaydetme ve temizleme
+- Tarama ilerlemesi takibi
+
 ### 🔧 Sistem Sağlığı
 - Batarya durumu ve gerilimi
 - Anlık akım çekimi
@@ -94,6 +101,7 @@ MiratApp/
 │       ├── CameraDataScreen.js     # Kamera verileri sayfası
 │       ├── SystemHealthScreen.js   # Sistem sağlığı sayfası
 │       ├── MovementControlScreen.js # Hareket kontrol sayfası
+│       ├── MappingScreen.js        # LIDAR haritalama sayfası
 │       └── GalleryScreen.js        # Kamera galeri sayfası
 ├── assets/                         # Uygulama varlıkları
 │   ├── icon.png                    # Uygulama ikonu (128x128)
@@ -120,10 +128,11 @@ MiratApp/
 2. Expo Go uygulamasını kullanarak QR kodu tarayın
 3. Robot ile bağlantı kurmak için "Bağlan" butonuna tıklayın
 4. Alt tablardan istediğiniz veri türünü seçin:
+   - **Sistem Sağlığı**: Robot sistem durumu ve bakım araçları
    - **Sensör Verileri**: Gaz sensörleri ve ultrasonik mesafe algılama
    - **Kamera Verileri**: Normal ve termal kamera görüntüleri
    - **Hareket Kontrol**: Robot yön ve hız kontrolü
-   - **Sistem Sağlığı**: Robot sistem durumu ve bakım araçları
+   - **Haritalama**: LIDAR verileri ve harita görselleştirmesi
 
 ## Geliştirme
 

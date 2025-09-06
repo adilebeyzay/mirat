@@ -9,6 +9,7 @@ import SensorDataScreen from '../screens/SensorDataScreen';
 import CameraDataScreen from '../screens/CameraDataScreen';
 import SystemHealthScreen from '../screens/SystemHealthScreen';
 import MovementControlScreen from '../screens/MovementControlScreen';
+import MappingScreen from '../screens/MappingScreen';
 import GalleryScreen from '../screens/GalleryScreen';
 
 const Tab = createBottomTabNavigator();
@@ -52,6 +53,8 @@ const TabNavigator = () => {
             iconName = 'medical';
           } else if (route.name === 'Hareket Kontrol') {
             iconName = 'game-controller';
+          } else if (route.name === 'Haritalama') {
+            iconName = 'map';
           } else {
             iconName = 'help';
           }
@@ -94,6 +97,13 @@ const TabNavigator = () => {
         component={MovementControlScreen}
         options={{
           title: 'Hareket Kontrol',
+        }}
+      />
+      <Tab.Screen
+        name="Haritalama"
+        component={MappingScreen}
+        options={{
+          title: 'Haritalama',
         }}
       />
     </Tab.Navigator>
