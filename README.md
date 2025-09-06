@@ -1,120 +1,34 @@
-
-# Mirat Backend API
-
-Node.js (Express) + MongoDB kullanarak geliştirilmiş backend API.
-
-## Kurulum
-
-1. Bağımlılıkları yükleyin:
-```bash
-npm install
-```
-
-2. `.env` dosyasını oluşturun:
-```bash
-cp env.example .env
-```
-
-3. `.env` dosyasındaki değerleri düzenleyin:
-- `MONGO_URI`: MongoDB bağlantı string'i
-- `JWT_SECRET`: Güçlü bir JWT secret key
-- `PORT`: Sunucu portu (varsayılan: 5000)
-
-4. MongoDB'yi başlatın
-
-5. Sunucuyu çalıştırın:
-```bash
-# Development
-npm run dev
-
-# Production
-npm start
-```
-
-## API Endpoints
-
-### Auth Endpoints
-
-#### POST /api/auth/register
-Kullanıcı kaydı
-```json
-{
-  "name": "John Doe",
-  "email": "john@example.com",
-  "password": "password123"
-}
-```
-
-#### POST /api/auth/login
-Kullanıcı girişi
-```json
-{
-  "email": "john@example.com",
-  "password": "password123"
-}
-```
-
-### Robot Data Endpoints (Auth Required)
-
-#### POST /api/robot
-Robot sensör verisi ekleme
-```json
-{
-  "sensorType": "temperature",
-  "value": 25.5,
-  "unit": "°C",
-  "location": "Room 1",
-  "notes": "Normal temperature"
-}
-```
-
-#### GET /api/robot
-Robot sensör verilerini listeleme (en yeniye göre)
-Query parameters:
-- `sensorType`: Sensör tipi filtreleme
-- `limit`: Sayfa başına kayıt sayısı (varsayılan: 50)
-- `page`: Sayfa numarası (varsayılan: 1)
-
-### Health Check
-
-#### GET /api/health
-Sunucu durumu kontrolü
-
-## Authentication
-
-Tüm robot data endpoint'leri JWT token gerektirir. Token'ı header'da `x-auth-token` olarak gönderin.
-
-## Sensor Types
-
-Desteklenen sensör tipleri:
-- temperature
-- humidity
-- pressure
-- motion
-- light
-- sound
-- vibration
-- other
-
-# MiratAppUI
+# MiratApp
 
 MiratApp, robot sensör ve kamera verilerini görüntüleyen bir mobil uygulamadır. Bu uygulama robot sisteminden gelen verileri gerçek zamanlı olarak takip etmenizi sağlar.
 
 ## Özellikler
 
 ### 📊 Sensör Verileri
-- Sıcaklık, nem, basınç ve titreşim verilerini gerçek zamanlı görüntüleme
+- Gaz sensörleri (Karbondioksit ve Yanıcı Gaz seviyeleri)
+- Ultrasonik sensör mesafe algılama (Sol/Sağ)
+- Renk kodlu uyarı sistemi (Yeşil/Sarı/Kırmızı)
 - Grafik ve trend analizi
 - Veri geçmişi takibi
 
 ### 📹 Kamera Verileri
-- Ön ve termal kamera görüntüleri
-- Canlı görüntü akışı
-- Görüntü kaydetme ve geçmiş
-- Kamera kontrolü
+- Normal ve termal kamera görüntüleri
+- Manuel görüntü yakalama
+- Eş zamanlı video kaydı
+- Galeri görüntüleme
+- Tam ekran görüntü modu
+
+### 🎮 Hareket Kontrol
+- İvmeölçer verilerini gerçek zamanlı görüntüleme
+- Robot yön kontrolü (İleri/Geri/Sol/Sağ)
+- Hız kontrolü (0-50 km/h)
+- Hareket durumu takibi
+- Uzaktan robot kontrolü
 
 ### 🔧 Sistem Sağlığı
-- Batarya durumu
+- Batarya durumu ve gerilimi
+- Anlık akım çekimi
+- Güç tüketimi
 - CPU, bellek ve disk kullanımı
 - Sistem sıcaklığı
 - Ağ durumu
@@ -156,35 +70,48 @@ Uygulama aşağıdaki ana Expo paketlerini kullanır:
 
 - **@react-navigation/native** - Navigasyon
 - **@react-navigation/bottom-tabs** - Alt tab navigasyonu
+- **@react-navigation/stack** - Stack navigasyonu
 - **react-native-chart-kit** - Grafik ve chart bileşenleri
 - **@expo/vector-icons** - İkonlar
 - **expo-camera** - Kamera erişimi
-- **expo-sensors** - Sensör verileri
-- **expo-bluetooth** - Bluetooth Low Energy
+- **expo-sensors** - Sensör verileri (İvmeölçer)
+- **@react-native-community/slider** - Hız kontrol slider'ı
 - **expo-linear-gradient** - Gradient efektleri
 - **expo-av** - Video ve ses işleme
 - **expo-location** - Konum servisleri
 - **expo-network** - Ağ durumu
+- **expo-status-bar** - Status bar kontrolü
 
 ## Proje Yapısı
 
 ```
 MiratApp/
 ├── src/
+│   ├── navigation/
+│   │   └── AppNavigator.js         # Ana navigasyon yapısı (Tab + Stack)
 │   └── screens/
-│       ├── SensorDataScreen.tsx    # Sensör verileri sayfası
-│       ├── CameraDataScreen.tsx    # Kamera verileri sayfası
-│       └── SystemHealthScreen.tsx  # Sistem sağlığı sayfası
+│       ├── SensorDataScreen.js     # Sensör verileri sayfası
+│       ├── CameraDataScreen.js     # Kamera verileri sayfası
+│       ├── SystemHealthScreen.js   # Sistem sağlığı sayfası
+│       ├── MovementControlScreen.js # Hareket kontrol sayfası
+│       └── GalleryScreen.js        # Kamera galeri sayfası
 ├── assets/                         # Uygulama varlıkları
-│   ├── icon.png                    # Uygulama ikonu
-│   ├── splash.png                  # Splash screen
+│   ├── icon.png                    # Uygulama ikonu (128x128)
+│   ├── splash.png                  # Splash screen (512x512)
 │   ├── adaptive-icon.png           # Android adaptive icon
 │   └── favicon.png                 # Web favicon
-├── App.tsx                         # Ana uygulama bileşeni
+├── App.js                          # Ana uygulama bileşeni (JavaScript)
 ├── app.json                        # Expo konfigürasyonu
 ├── babel.config.js                 # Babel konfigürasyonu
-├── tsconfig.json                   # TypeScript konfigürasyonu
-└── package.json                    # Proje bağımlılıkları
+├── package.json                    # Proje bağımlılıkları
+├── package-lock.json               # Bağımlılık kilidi
+├── README.md                       # Proje dokümantasyonu
+├── LICENSE                         # Lisans dosyası
+├── android/                        # Android platform dosyaları
+│   └── app/src/main/
+├── ios/                            # iOS platform dosyaları
+│   └── MiratApp/
+└── node_modules/                   # NPM bağımlılıkları
 ```
 
 ## Kullanım
@@ -193,8 +120,9 @@ MiratApp/
 2. Expo Go uygulamasını kullanarak QR kodu tarayın
 3. Robot ile bağlantı kurmak için "Bağlan" butonuna tıklayın
 4. Alt tablardan istediğiniz veri türünü seçin:
-   - **Sensör Verileri**: Robot sensörlerinden gelen veriler
-   - **Kamera Verileri**: Kamera görüntüleri ve kontrolleri
+   - **Sensör Verileri**: Gaz sensörleri ve ultrasonik mesafe algılama
+   - **Kamera Verileri**: Normal ve termal kamera görüntüleri
+   - **Hareket Kontrol**: Robot yön ve hız kontrolü
    - **Sistem Sağlığı**: Robot sistem durumu ve bakım araçları
 
 ## Geliştirme
