@@ -24,6 +24,10 @@ const SensorDataScreen = () => {
     left: 0,
     right: 0,
   });
+  const [lastAlertLevels, setLastAlertLevels] = useState({
+    co2: 0,
+    flammable: 0,
+  });
 
   // Sayfa odak durumunu takip et
   useFocusEffect(
@@ -33,55 +37,61 @@ const SensorDataScreen = () => {
     }, [])
   );
 
-  // Mock data - gerçek uygulamada robot API'sinden gelecek
-  useEffect(() => {
-    if (!isConnected || !isScreenFocused) return; // Bağlı değilse veya sayfa odakta değilse veri üretme
 
-    const generateMockData = () => {
-      const newCo2Level = Math.random() * 100;
-      const newFlammableGasLevel = Math.random() * 100;
+  // Mock data - API çalışmadığında kullanılacak
+  const generateMockData = () => {
+    const newCo2Level = Math.random() * 100;
+    const newFlammableGasLevel = Math.random() * 100;
       
-      // Gaz seviyesi uyarıları - sadece sayfa odakta iken
-      if (isScreenFocused) {
-        // Karbondioksit uyarıları
-        if (newCo2Level >= 70 && co2Level < 70) {
-          // Kritik seviyeye çıktı (direkt veya 20'den sonra)
-          Alert.alert('Kritik Uyarı', 'Karbondioksit seviyesi kritik düzeyde!');
-        } else if (newCo2Level >= 20 && co2Level < 20) {
-          // Sadece 20'ye çıktı (70'e çıkmadı)
-          Alert.alert('Uyarı', 'Karbondioksit seviyesi artıyor!');
-        }
-        
-        // Yanıcı gaz uyarıları
-        if (newFlammableGasLevel >= 70 && flammableGasLevel < 70) {
-          // Kritik seviyeye çıktı (direkt veya 20'den sonra)
-          Alert.alert('Kritik Uyarı', 'Yanıcı gaz seviyesi kritik düzeyde!');
-        } else if (newFlammableGasLevel >= 20 && flammableGasLevel < 20) {
-          // Sadece 20'ye çıktı (70'e çıkmadı)
-          Alert.alert('Uyarı', 'Yanıcı gaz seviyesi artıyor!');
-        }
+    // Gaz seviyesi uyarıları - sadece sayfa odakta iken ve seviye değiştiğinde
+    if (isScreenFocused) {
+      // Karbondioksit uyarıları - sadece seviye değiştiğinde
+      if (newCo2Level >= 70 && lastAlertLevels.co2 < 70) {
+        Alert.alert('Kritik Uyarı', 'Karbondioksit seviyesi kritik düzeyde!');
+        setLastAlertLevels(prev => ({ ...prev, co2: newCo2Level }));
+      } else if (newCo2Level >= 20 && newCo2Level < 70 && lastAlertLevels.co2 < 20) {
+        Alert.alert('Uyarı', 'Karbondioksit seviyesi artıyor!');
+        setLastAlertLevels(prev => ({ ...prev, co2: newCo2Level }));
       }
-
-      setCo2Level(newCo2Level);
-      setFlammableGasLevel(newFlammableGasLevel);
-
-      const newData = {
-        co2Level: newCo2Level,
-        flammableGasLevel: newFlammableGasLevel,
-        ultrasonicData: {
-          left: Math.random() * 200 + 10, // 10-210 cm
-          right: Math.random() * 200 + 10,
-        },
-        timestamp: new Date().toLocaleTimeString(),
-      };
       
-      setUltrasonicData(newData.ultrasonicData);
-      setSensorData(prev => [...prev.slice(-19), newData]);
-    };
+      // Yanıcı gaz uyarıları - sadece seviye değiştiğinde
+      if (newFlammableGasLevel >= 70 && lastAlertLevels.flammable < 70) {
+        Alert.alert('Kritik Uyarı', 'Yanıcı gaz seviyesi kritik düzeyde!');
+        setLastAlertLevels(prev => ({ ...prev, flammable: newFlammableGasLevel }));
+      } else if (newFlammableGasLevel >= 20 && newFlammableGasLevel < 70 && lastAlertLevels.flammable < 20) {
+        Alert.alert('Uyarı', 'Yanıcı gaz seviyesi artıyor!');
+        setLastAlertLevels(prev => ({ ...prev, flammable: newFlammableGasLevel }));
+      }
+    }
 
+    setCo2Level(newCo2Level);
+    setFlammableGasLevel(newFlammableGasLevel);
+
+    const newData = {
+      co2Level: newCo2Level,
+      flammableGasLevel: newFlammableGasLevel,
+      ultrasonicData: {
+        left: Math.random() * 200 + 10, // 10-210 cm
+        right: Math.random() * 200 + 10,
+      },
+      timestamp: new Date().toLocaleTimeString(),
+    };
+    
+    setUltrasonicData(newData.ultrasonicData);
+    setSensorData(prev => [...prev.slice(-19), newData]);
+  };
+
+  useEffect(() => {
+    if (!isConnected || !isScreenFocused) return;
+
+    // İlk veri üretme
+    generateMockData();
+
+    // Periyodik veri güncelleme
     const interval = setInterval(generateMockData, 10000);
+    
     return () => clearInterval(interval);
-  }, [isConnected, isScreenFocused, co2Level, flammableGasLevel]);
+  }, [isConnected, isScreenFocused]);
 
   const chartData = {
     labels: sensorData.slice(-6).map(data => data.timestamp.split(':').slice(1).join(':')),
@@ -118,6 +128,8 @@ const SensorDataScreen = () => {
 
   const connectToRobot = () => {
     setIsConnected(!isConnected);
+    // Bağlantı durumu değiştiğinde uyarı seviyelerini sıfırla
+    setLastAlertLevels({ co2: 0, flammable: 0 });
   };
 
   const getLatestData = () => {

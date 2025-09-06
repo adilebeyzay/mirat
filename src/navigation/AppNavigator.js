@@ -69,6 +69,13 @@ const TabNavigator = () => {
         },
       })}>
       <Tab.Screen
+        name="Sistem Sağlığı"
+        component={SystemHealthScreen}
+        options={{
+          title: 'Sistem Sağlığı',
+        }}
+      />
+      <Tab.Screen
         name="Sensör Verileri"
         component={SensorDataScreen}
         options={{
@@ -80,13 +87,6 @@ const TabNavigator = () => {
         component={CameraStack}
         options={{
           title: 'Kamera Verileri',
-        }}
-      />
-      <Tab.Screen
-        name="Sistem Sağlığı"
-        component={SystemHealthScreen}
-        options={{
-          title: 'Sistem Sağlığı',
         }}
       />
       <Tab.Screen
