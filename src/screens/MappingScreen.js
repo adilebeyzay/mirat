@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-// import { WebView } from 'react-native-webview'; // Geçici olarak kapatıldı
+import { WebView } from 'react-native-webview';
 import { lidarAPI } from '../services/lidarAPI';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -27,6 +27,8 @@ const MappingScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const [rotation, setRotation] = useState(0);
+  const [jsonData, setJsonData] = useState(null);
+  const [jsonFileName, setJsonFileName] = useState('');
 
   // Mock LIDAR verisi üretme
   const generateLidarData = useCallback(() => {
@@ -77,12 +79,17 @@ const MappingScreen = () => {
       
       return () => clearInterval(interval);
     }
-  }, [isScanning, generateLidarData]);
+  }, [isScanning]); // generateLidarData dependency'sini kaldırdık
 
   const connectToRobot = () => {
-    setIsConnected(!isConnected);
-    if (!isConnected) {
-      Alert.alert('Bağlantı', 'Robot LIDAR sistemine bağlanıldı');
+    try {
+      setIsConnected(!isConnected);
+      if (!isConnected) {
+        Alert.alert('Bağlantı', 'Robot LIDAR sistemine bağlanıldı');
+      }
+    } catch (error) {
+      console.error('Bağlantı hatası:', error);
+      Alert.alert('Hata', 'Bağlantı kurulurken hata oluştu');
     }
   };
 
@@ -182,22 +189,114 @@ const MappingScreen = () => {
     return '#4caf50'; // Yeşil - Çok uzak
   };
 
+
   return (
     <>
       <StatusBar style="light" />
-      <ScrollView style={styles.container}>
+      
+      {/* Tam ekran modunda sadece 3D görsel */}
+      {fullscreen && isConnected && (
+        <View style={styles.fullscreenContainer}>
+          <WebView
+            source={{ 
+              uri: 'http://10.0.2.2:8080/lidar-3d'
+            }}
+            onShouldStartLoadWithRequest={(request) => {
+              // Sadece güvenli URL'lere izin ver
+              return request.url.startsWith('http://10.0.2.2:8080/');
+            }}
+            style={styles.fullscreenWebView}
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
+            startInLoadingState={true}
+            scalesPageToFit={true}
+            allowsInlineMediaPlayback={true}
+            mediaPlaybackRequiresUserAction={false}
+            mixedContentMode="compatibility"
+            onError={(syntheticEvent) => {
+              const { nativeEvent } = syntheticEvent;
+              console.warn('WebView error: ', nativeEvent);
+            }}
+            onHttpError={(syntheticEvent) => {
+              const { nativeEvent } = syntheticEvent;
+              console.warn('WebView HTTP error: ', nativeEvent);
+            }}
+            onLoadStart={() => {
+              console.log('3D görsel yükleniyor...');
+            }}
+            onLoadEnd={() => {
+              console.log('3D görsel yüklendi!');
+            }}
+            renderError={(errorDomain, errorCode, errorDesc) => (
+              <View style={styles.webViewError}>
+                <Text style={styles.errorText}>
+                  3D Görsel Yüklenemedi
+                </Text>
+                <Text style={styles.errorSubtext}>
+                  Python sunucusu çalışıyor mu kontrol edin
+                </Text>
+                <Text style={styles.errorUrl}>
+                  http://10.0.2.2:8080/lidar-3d
+                </Text>
+              </View>
+            )}
+          />
+          
+          {/* Tam ekran çıkış butonu */}
+          <TouchableOpacity
+            style={styles.exitFullscreenButton}
+            onPress={() => setFullscreen(false)}>
+            <Ionicons name="close" size={30} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Normal mod - tüm içerik */}
+      <ScrollView style={[
+        styles.container,
+        fullscreen && { display: 'none' }
+      ]}>
         <View style={styles.header}>
           <Text style={styles.title}>LIDAR Haritalama</Text>
-          <View style={styles.headerButtons}>
-            <TouchableOpacity
-              style={[styles.connectButton, isConnected && styles.connectedButton]}
-              onPress={connectToRobot}>
-              <Text style={styles.connectButtonText}>
-                {isConnected ? 'Bağlı' : 'Bağlan'}
-              </Text>
-            </TouchableOpacity>
-          </View>
+            <View style={styles.headerButtons}>
+              <TouchableOpacity
+                style={[styles.connectButton, isConnected && styles.connectedButton]}
+                onPress={connectToRobot}>
+                <Text style={styles.connectButtonText}>
+                  {isConnected ? 'Bağlı' : 'Bağlan'}
+                </Text>
+              </TouchableOpacity>
+            </View>
         </View>
+
+        {/* JSON Veri Bilgileri - Sadece veri varsa göster */}
+        {jsonData && (
+          <View style={styles.jsonInfoContainer}>
+            <Text style={styles.jsonInfoTitle}>LIDAR Veri Bilgileri</Text>
+            <View style={styles.jsonInfoGrid}>
+              <View style={styles.jsonInfoItem}>
+                <Text style={styles.jsonInfoLabel}>Tarama ID:</Text>
+                <Text style={styles.jsonInfoValue}>{jsonData.scanId || 'N/A'}</Text>
+              </View>
+              <View style={styles.jsonInfoItem}>
+                <Text style={styles.jsonInfoLabel}>LIDAR Noktaları:</Text>
+                <Text style={styles.jsonInfoValue}>{jsonData.lidarPoints?.length || 0}</Text>
+              </View>
+              <View style={styles.jsonInfoItem}>
+                <Text style={styles.jsonInfoLabel}>Ortalama Mesafe:</Text>
+                <Text style={styles.jsonInfoValue}>
+                  {jsonData.statistics?.averageDistance?.toFixed(1) || '0'} cm
+                </Text>
+              </View>
+              <View style={styles.jsonInfoItem}>
+                <Text style={styles.jsonInfoLabel}>Maksimum Mesafe:</Text>
+                <Text style={styles.jsonInfoValue}>
+                  {jsonData.statistics?.maxDistance || '0'} cm
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
 
         {isConnected && (
           <>
@@ -247,65 +346,88 @@ const MappingScreen = () => {
             <View style={styles.lidarContainer}>
               <Text style={styles.sectionTitle}>3D LIDAR Görselleştirmesi</Text>
               
-              {/* Tam ekran 3D görsel alanı */}
-              <View style={[
-                styles.threeDContainer,
-                fullscreen && {
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  height: screenHeight,
-                  width: screenWidth,
-                  zIndex: 1000,
-                  borderRadius: 0,
-                  marginBottom: 0,
-                }
-              ]}>
+              {/* 3D görsel alanı */}
+              <View style={styles.threeDContainer}>
                 {/* Python kodundan gelecek 3D görsel */}
-                <View style={styles.threeDView}>
-                  <Text style={styles.threeDPlaceholder}>
-                    3D LIDAR Görseli
-                  </Text>
-                  <Text style={styles.threeDSubtext}>
-                    {isConnected 
-                      ? 'Python işleme kodundan gelecek 3D görsel' 
-                      : 'Robot bağlantısı kurulduğunda Python işleme kodundan gelecek'
-                    }
-                  </Text>
-                  {isConnected && (
-                    <TouchableOpacity
-                      style={styles.openBrowserButton}
-                      onPress={() => {
-                        // Python 3D görselini tarayıcıda aç
-                        Alert.alert(
-                          '3D Görsel',
-                          'Python kodunuzun 3D görselini tarayıcıda açmak için: http://10.0.2.2:8080/lidar-3d',
-                          [{ text: 'Tamam' }]
-                        );
-                      }}>
-                      <Text style={styles.openBrowserText}>
-                        Tarayıcıda Aç
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
+                {isConnected ? (
+                  <WebView
+                    source={{ 
+                      uri: 'http://10.0.2.2:8080/lidar-3d' // Python 3D görsel sunucusu
+                    }}
+                    onShouldStartLoadWithRequest={(request) => {
+                      // Sadece güvenli URL'lere izin ver
+                      return request.url.startsWith('http://10.0.2.2:8080/');
+                    }}
+                    style={[
+                      styles.threeDView,
+                      fullscreen && {
+                        height: screenHeight - 100, // Tam ekran için yükseklik ayarı
+                      }
+                    ]}
+                    javaScriptEnabled={true}
+                    domStorageEnabled={true}
+                    startInLoadingState={true}
+                    scalesPageToFit={true}
+                    allowsInlineMediaPlayback={true}
+                    mediaPlaybackRequiresUserAction={false}
+                    mixedContentMode="compatibility"
+                    onError={(syntheticEvent) => {
+                      const { nativeEvent } = syntheticEvent;
+                      console.warn('WebView error: ', nativeEvent);
+                    }}
+                    onHttpError={(syntheticEvent) => {
+                      const { nativeEvent } = syntheticEvent;
+                      console.warn('WebView HTTP error: ', nativeEvent);
+                    }}
+                    onLoadStart={() => {
+                      console.log('3D görsel yükleniyor...');
+                    }}
+                    onLoadEnd={() => {
+                      console.log('3D görsel yüklendi!');
+                    }}
+                    renderError={(errorDomain, errorCode, errorDesc) => (
+                      <View style={styles.webViewError}>
+                        <Text style={styles.errorText}>
+                          3D Görsel Yüklenemedi
+                        </Text>
+                        <Text style={styles.errorSubtext}>
+                          Python sunucusu çalışıyor mu kontrol edin
+                        </Text>
+                        <Text style={styles.errorUrl}>
+                          http://10.0.2.2:8080/lidar-3d
+                        </Text>
+                      </View>
+                    )}
+                  />
+                ) : (
+                  <View style={styles.threeDView}>
+                    <Text style={styles.threeDPlaceholder}>
+                      3D LIDAR Görseli
+                    </Text>
+                    <Text style={styles.threeDSubtext}>
+                      Robot bağlantısı kurulduğunda Python işleme kodundan gelecek
+                    </Text>
+                  </View>
+                )}
+
+                {/* Tam ekran butonu - 3D görsel alanının üst köşesinde */}
+                {isConnected && (
+                  <TouchableOpacity
+                    style={styles.fullscreenToggleButton}
+                    onPress={() => setFullscreen(!fullscreen)}>
+                    <Ionicons 
+                      name={fullscreen ? "contract" : "expand"} 
+                      size={24} 
+                      color="#fff" 
+                    />
+                  </TouchableOpacity>
+                )}
               </View>
 
-              {/* Kontrol paneli */}
+              {/* Kontrol paneli - sadece normal modda göster */}
               {!fullscreen && (
                 <View style={styles.controlPanel}>
                   <View style={styles.controlRow}>
-                    <TouchableOpacity
-                      style={[styles.controlButton, styles.fullscreenButton]}
-                      onPress={() => setFullscreen(!fullscreen)}>
-                      <Ionicons name={fullscreen ? "contract" : "expand"} size={24} color="#fff" />
-                      <Text style={styles.controlButtonText}>
-                        {fullscreen ? 'Küçült' : 'Tam Ekran'}
-                      </Text>
-                    </TouchableOpacity>
-                    
                     <TouchableOpacity
                       style={[styles.controlButton, styles.rotateButton]}
                       onPress={() => setRotation(rotation + 90)}>
@@ -315,58 +437,51 @@ const MappingScreen = () => {
                   </View>
                 </View>
               )}
-              
-              {/* Tam ekran modunda çıkış butonu */}
-              {fullscreen && (
-                <TouchableOpacity
-                  style={styles.exitFullscreenButton}
-                  onPress={() => setFullscreen(false)}>
-                  <Ionicons name="close" size={30} color="#fff" />
-                </TouchableOpacity>
-              )}
             </View>
 
-            {/* Harita Verileri */}
-            <View style={styles.mapDataContainer}>
-              <Text style={styles.sectionTitle}>Harita Verileri</Text>
-              
-              <View style={styles.mapStats}>
-                <View style={styles.statItem}>
-                  <Text style={styles.statValue}>{lidarData.length}</Text>
-                  <Text style={styles.statLabel}>LIDAR Noktası</Text>
-                </View>
-                <View style={styles.statItem}>
-                  <Text style={styles.statValue}>{mapData.length}</Text>
-                  <Text style={styles.statLabel}>Harita Noktası</Text>
-                </View>
-                <View style={styles.statItem}>
-                  <Text style={styles.statValue}>
-                    {lidarData.length > 0 ? 
-                      (lidarData.reduce((sum, point) => sum + point.distance, 0) / lidarData.length).toFixed(1) 
-                      : '0'
-                    }cm
-                  </Text>
-                  <Text style={styles.statLabel}>Ortalama Mesafe</Text>
-                </View>
-              </View>
-
-              {/* Son LIDAR Verileri */}
-              <View style={styles.recentDataContainer}>
-                <Text style={styles.recentDataTitle}>Son LIDAR Verileri</Text>
-                {lidarData.slice(-10).reverse().map((point, index) => (
-                  <View key={index} style={styles.dataItem}>
-                    <Text style={styles.dataAngle}>{point.angle}°</Text>
-                    <Text style={styles.dataDistance}>{point.distance.toFixed(1)}cm</Text>
-                    <View 
-                      style={[
-                        styles.dataColor, 
-                        { backgroundColor: getDistanceColor(point.distance) }
-                      ]} 
-                    />
+            {/* Harita Verileri - sadece normal modda göster */}
+            {!fullscreen && (
+              <View style={styles.mapDataContainer}>
+                <Text style={styles.sectionTitle}>Harita Verileri</Text>
+                
+                <View style={styles.mapStats}>
+                  <View style={styles.statItem}>
+                    <Text style={styles.statValue}>{lidarData.length}</Text>
+                    <Text style={styles.statLabel}>LIDAR Noktası</Text>
                   </View>
-                ))}
+                  <View style={styles.statItem}>
+                    <Text style={styles.statValue}>{mapData.length}</Text>
+                    <Text style={styles.statLabel}>Harita Noktası</Text>
+                  </View>
+                  <View style={styles.statItem}>
+                    <Text style={styles.statValue}>
+                      {lidarData.length > 0 ? 
+                        (lidarData.reduce((sum, point) => sum + point.distance, 0) / lidarData.length).toFixed(1) 
+                        : '0'
+                      }cm
+                    </Text>
+                    <Text style={styles.statLabel}>Ortalama Mesafe</Text>
+                  </View>
+                </View>
+
+                {/* Son LIDAR Verileri */}
+                <View style={styles.recentDataContainer}>
+                  <Text style={styles.recentDataTitle}>Son LIDAR Verileri</Text>
+                  {lidarData.slice(-10).reverse().map((point, index) => (
+                    <View key={index} style={styles.dataItem}>
+                      <Text style={styles.dataAngle}>{point.angle}°</Text>
+                      <Text style={styles.dataDistance}>{point.distance.toFixed(1)}cm</Text>
+                      <View 
+                        style={[
+                          styles.dataColor, 
+                          { backgroundColor: getDistanceColor(point.distance) }
+                        ]} 
+                      />
+                    </View>
+                  ))}
+                </View>
               </View>
-            </View>
+            )}
           </>
         )}
 
@@ -420,6 +535,45 @@ const styles = StyleSheet.create({
   connectButtonText: {
     color: '#fff',
     fontWeight: 'bold',
+  },
+  jsonInfoContainer: {
+    backgroundColor: '#fff',
+    margin: 20,
+    padding: 15,
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  jsonInfoTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    color: '#333',
+  },
+  jsonInfoGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  jsonInfoItem: {
+    width: '48%',
+    marginBottom: 10,
+  },
+  jsonInfoLabel: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 2,
+  },
+  jsonInfoValue: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#333',
   },
   sectionTitle: {
     fontSize: 18,
@@ -504,6 +658,7 @@ const styles = StyleSheet.create({
     borderColor: '#333',
     marginBottom: 15,
     overflow: 'hidden',
+    position: 'relative',
   },
   threeDView: {
     flex: 1,
@@ -569,6 +724,63 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 14,
+  },
+  webViewError: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#f44336',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  errorSubtext: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  errorUrl: {
+    fontSize: 12,
+    color: '#2196F3',
+    fontFamily: 'monospace',
+    textAlign: 'center',
+    backgroundColor: '#e3f2fd',
+    padding: 10,
+    borderRadius: 5,
+  },
+  fullscreenToggleButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    borderRadius: 25,
+    width: 50,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1001,
+  },
+  fullscreenContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: screenWidth,
+    height: screenHeight,
+    backgroundColor: '#000',
+    zIndex: 1000,
+  },
+  fullscreenWebView: {
+    flex: 1,
+    width: screenWidth,
+    height: screenHeight,
   },
   mapDataContainer: {
     backgroundColor: '#fff',

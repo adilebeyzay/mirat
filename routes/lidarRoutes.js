@@ -45,3 +45,4 @@ router.post('/start', startLidarScan);
 router.post('/stop', stopLidarScan);
 
 module.exports = router;
+

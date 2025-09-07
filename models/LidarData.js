@@ -149,3 +149,4 @@ lidarDataSchema.pre('save', function(next) {
 });
 
 module.exports = mongoose.model('LidarData', lidarDataSchema);
+
