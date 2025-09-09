@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import { WebView } from 'react-native-webview';
+// import { WebView } from 'react-native-webview'; // Geçici olarak kaldırıldı
 import { lidarAPI } from '../services/lidarAPI';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -201,6 +201,11 @@ const MappingScreen = () => {
             source={{ 
               uri: 'http://10.0.2.2:8080/lidar-3d'
             }}
+            onError={(syntheticEvent) => {
+              const { nativeEvent } = syntheticEvent;
+              console.warn('WebView error: ', nativeEvent);
+              Alert.alert('Bağlantı Hatası', '3D görsel sunucusuna bağlanılamıyor. Python sunucusunu başlatın.');
+            }}
             onShouldStartLoadWithRequest={(request) => {
               // Sadece güvenli URL'lere izin ver
               return request.url.startsWith('http://10.0.2.2:8080/');
@@ -213,10 +218,6 @@ const MappingScreen = () => {
             allowsInlineMediaPlayback={true}
             mediaPlaybackRequiresUserAction={false}
             mixedContentMode="compatibility"
-            onError={(syntheticEvent) => {
-              const { nativeEvent } = syntheticEvent;
-              console.warn('WebView error: ', nativeEvent);
-            }}
             onHttpError={(syntheticEvent) => {
               const { nativeEvent } = syntheticEvent;
               console.warn('WebView HTTP error: ', nativeEvent);
@@ -350,55 +351,23 @@ const MappingScreen = () => {
               <View style={styles.threeDContainer}>
                 {/* Python kodundan gelecek 3D görsel */}
                 {isConnected ? (
-                  <WebView
-                    source={{ 
-                      uri: 'http://10.0.2.2:8080/lidar-3d' // Python 3D görsel sunucusu
-                    }}
-                    onShouldStartLoadWithRequest={(request) => {
-                      // Sadece güvenli URL'lere izin ver
-                      return request.url.startsWith('http://10.0.2.2:8080/');
-                    }}
-                    style={[
-                      styles.threeDView,
-                      fullscreen && {
-                        height: screenHeight - 100, // Tam ekran için yükseklik ayarı
-                      }
-                    ]}
-                    javaScriptEnabled={true}
-                    domStorageEnabled={true}
-                    startInLoadingState={true}
-                    scalesPageToFit={true}
-                    allowsInlineMediaPlayback={true}
-                    mediaPlaybackRequiresUserAction={false}
-                    mixedContentMode="compatibility"
-                    onError={(syntheticEvent) => {
-                      const { nativeEvent } = syntheticEvent;
-                      console.warn('WebView error: ', nativeEvent);
-                    }}
-                    onHttpError={(syntheticEvent) => {
-                      const { nativeEvent } = syntheticEvent;
-                      console.warn('WebView HTTP error: ', nativeEvent);
-                    }}
-                    onLoadStart={() => {
-                      console.log('3D görsel yükleniyor...');
-                    }}
-                    onLoadEnd={() => {
-                      console.log('3D görsel yüklendi!');
-                    }}
-                    renderError={(errorDomain, errorCode, errorDesc) => (
-                      <View style={styles.webViewError}>
-                        <Text style={styles.errorText}>
-                          3D Görsel Yüklenemedi
-                        </Text>
-                        <Text style={styles.errorSubtext}>
-                          Python sunucusu çalışıyor mu kontrol edin
-                        </Text>
-                        <Text style={styles.errorUrl}>
-                          http://10.0.2.2:8080/lidar-3d
-                        </Text>
+                  <View style={styles.mock3DContainer}>
+                    <View style={styles.mock3DContent}>
+                      <Ionicons name="cube" size={60} color="#4CAF50" />
+                      <Text style={styles.mock3DTitle}>3D LIDAR Görseli</Text>
+                      <Text style={styles.mock3DSubtext}>
+                        Python sunucusu çalıştırıldığında gerçek 3D görsel burada görünecek
+                      </Text>
+                      <View style={styles.mock3DGrid}>
+                        {[...Array(8)].map((_, i) => (
+                          <View key={i} style={[styles.mock3DGridItem, { 
+                            backgroundColor: i % 2 === 0 ? '#4CAF50' : '#8BC34A',
+                            opacity: 0.3 + (i * 0.1)
+                          }]} />
+                        ))}
                       </View>
-                    )}
-                  />
+                    </View>
+                  </View>
                 ) : (
                   <View style={styles.threeDView}>
                     <Text style={styles.threeDPlaceholder}>
@@ -861,6 +830,74 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#999',
     textAlign: 'center',
+  },
+  mock3DContainer: {
+    flex: 1,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  mock3DContent: {
+    alignItems: 'center',
+  },
+  mock3DTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#4CAF50',
+    marginTop: 10,
+    marginBottom: 5,
+  },
+  mock3DSubtext: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  mock3DGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    width: 120,
+  },
+  mock3DGridItem: {
+    width: 20,
+    height: 20,
+    margin: 2,
+    borderRadius: 10,
+  },
+  fullscreenMock3D: {
+    flex: 1,
+    backgroundColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  fullscreenMockTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#4CAF50',
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  fullscreenMockSubtext: {
+    fontSize: 16,
+    color: '#999',
+    textAlign: 'center',
+    marginBottom: 40,
+  },
+  fullscreenMockGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    width: 200,
+  },
+  fullscreenMockGridItem: {
+    width: 30,
+    height: 30,
+    margin: 3,
+    borderRadius: 15,
   },
 });
 
