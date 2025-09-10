@@ -146,7 +146,7 @@ export default function CameraDataScreen({navigation}) {
 
             {/* Normal Kamera Görüntüsü */}
             <View style={styles.liveViewContainer}>
-              <Text style={styles.liveViewTitle}>Normal Kamera</Text>
+              <Text style={styles.liveViewTitle}>Pi Kamera</Text>
               <TouchableOpacity 
                 style={styles.liveViewFrame}
                 onPress={() => normalCameraData.length > 0 && openFullScreen(normalCameraData[0].imageUri, 'normal')}
@@ -233,7 +233,7 @@ export default function CameraDataScreen({navigation}) {
                     <View style={styles.historyImageInfo}>
                         <Text style={styles.historyImageTime}>{data.timestamp}</Text>
                         <Text style={styles.historyImageType}>
-                          {data.type === 'normal' && 'Normal'}
+                          {data.type === 'normal' && 'Pi Kamera'}
                           {data.type === 'thermal' && 'Termal'}
                         </Text>
                       </View>
@@ -277,7 +277,7 @@ export default function CameraDataScreen({navigation}) {
               />
               <View style={styles.fullScreenInfo}>
                 <Text style={styles.fullScreenCameraType}>
-                  {fullScreenImage.type === 'normal' ? 'Normal Kamera' : 'Termal Kamera'}
+                  {fullScreenImage.type === 'normal' ? 'Pi Kamera' : 'Termal Kamera'}
                 </Text>
                 <Text style={styles.fullScreenTimestamp}>
                   {new Date().toLocaleTimeString()}
