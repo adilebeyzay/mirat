@@ -11,7 +11,7 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 // import { WebView } from 'react-native-webview'; // Geçici olarak kaldırıldı
-import { lidarAPI } from '../services/lidarAPI';
+// import { lidarAPI } from '../services/lidarAPI'; // Geçici olarak kaldırıldı
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -197,51 +197,22 @@ const MappingScreen = () => {
       {/* Tam ekran modunda sadece 3D görsel */}
       {fullscreen && isConnected && (
         <View style={styles.fullscreenContainer}>
-          <WebView
-            source={{ 
-              uri: 'http://10.0.2.2:8080/lidar-3d'
-            }}
-            onError={(syntheticEvent) => {
-              const { nativeEvent } = syntheticEvent;
-              console.warn('WebView error: ', nativeEvent);
-              Alert.alert('Bağlantı Hatası', '3D görsel sunucusuna bağlanılamıyor. Python sunucusunu başlatın.');
-            }}
-            onShouldStartLoadWithRequest={(request) => {
-              // Sadece güvenli URL'lere izin ver
-              return request.url.startsWith('http://10.0.2.2:8080/');
-            }}
-            style={styles.fullscreenWebView}
-            javaScriptEnabled={true}
-            domStorageEnabled={true}
-            startInLoadingState={true}
-            scalesPageToFit={true}
-            allowsInlineMediaPlayback={true}
-            mediaPlaybackRequiresUserAction={false}
-            mixedContentMode="compatibility"
-            onHttpError={(syntheticEvent) => {
-              const { nativeEvent } = syntheticEvent;
-              console.warn('WebView HTTP error: ', nativeEvent);
-            }}
-            onLoadStart={() => {
-              console.log('3D görsel yükleniyor...');
-            }}
-            onLoadEnd={() => {
-              console.log('3D görsel yüklendi!');
-            }}
-            renderError={(errorDomain, errorCode, errorDesc) => (
-              <View style={styles.webViewError}>
-                <Text style={styles.errorText}>
-                  3D Görsel Yüklenemedi
-                </Text>
-                <Text style={styles.errorSubtext}>
-                  Python sunucusu çalışıyor mu kontrol edin
-                </Text>
-                <Text style={styles.errorUrl}>
-                  http://10.0.2.2:8080/lidar-3d
-                </Text>
-              </View>
-            )}
-          />
+          {/* Geçici olarak WebView yerine mock görsel kullanıyoruz */}
+          <View style={styles.fullscreenMock3D}>
+            <Ionicons name="cube" size={100} color="#4CAF50" />
+            <Text style={styles.fullscreenMockTitle}>3D LIDAR Görseli</Text>
+            <Text style={styles.fullscreenMockSubtext}>
+              Python sunucusu çalıştırıldığında gerçek 3D görsel burada görünecek
+            </Text>
+            <View style={styles.fullscreenMockGrid}>
+              {[...Array(12)].map((_, i) => (
+                <View key={i} style={[styles.fullscreenMockGridItem, { 
+                  backgroundColor: i % 3 === 0 ? '#4CAF50' : i % 3 === 1 ? '#8BC34A' : '#CDDC39',
+                  opacity: 0.3 + (i * 0.05)
+                }]} />
+              ))}
+            </View>
+          </View>
           
           {/* Tam ekran çıkış butonu */}
           <TouchableOpacity
