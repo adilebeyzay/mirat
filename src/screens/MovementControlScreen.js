@@ -11,6 +11,7 @@ import {
 import {StatusBar} from 'expo-status-bar';
 import {Accelerometer} from 'expo-sensors';
 import Slider from '@react-native-community/slider';
+import websocketService from '../services/websocketService';
 
 const {width: screenWidth} = Dimensions.get('window');
 
@@ -47,10 +48,12 @@ const MovementControlScreen = () => {
     };
   }, [isConnected]);
 
-  const connectToRobot = () => {
+  const connectToRobot = async () => {
     setIsConnected(!isConnected);
     if (!isConnected) {
-      Alert.alert('Bağlantı', 'Robot hareket sistemine bağlanıldı');
+      Alert.alert('Başarılı', 'Robot hareket kontrol sistemine bağlanıldı');
+    } else {
+      Alert.alert('Bilgi', 'Robot hareket kontrol bağlantısı kesildi');
     }
   };
 
@@ -68,7 +71,16 @@ const MovementControlScreen = () => {
       return;
     }
     
-    // Gerçek uygulamada bu komut robot API'sine gönderilecek
+    // WebSocket üzerinden motor komutu gönder (bağlantı kontrolü yok)
+    const command = direction === 'İleri' ? 'forward' :
+                   direction === 'Geri' ? 'backward' :
+                   direction === 'Sol' ? 'left' :
+                   direction === 'Sağ' ? 'right' : 'stop';
+    
+    // WebSocket bağlantısı varsa komut gönder, yoksa sadece alert göster
+    if (websocketService.getConnectionStatus()) {
+      websocketService.sendMotorCommand(command);
+    }
     Alert.alert('Hareket Komutu', `${direction} yönüne hareket başlatıldı - Hız: ${speed} km/h`);
   };
 

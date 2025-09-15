@@ -23,6 +23,50 @@ export default function CameraDataScreen({navigation}) {
   const [fullScreenImage, setFullScreenImage] = useState(null);
   const [showFullScreen, setShowFullScreen] = useState(false);
   const [recordingStartTime, setRecordingStartTime] = useState(null);
+  const [currentThermalImage, setCurrentThermalImage] = useState(1);
+  const [currentPiImage, setCurrentPiImage] = useState(1);
+  
+  // Termal kamera görüntüleri
+  const thermalImages = [
+    require('../../termal_1.jpeg'),
+    require('../../termal_2.jpeg'),
+    require('../../termal_3.jpeg'),
+    require('../../termal_4.jpeg'),
+  ];
+
+  // Pi kamera görüntüleri
+  const piImages = [
+    require('../../picam_1.jpeg'),
+    require('../../picam_2.jpeg'),
+  ];
+
+  // Termal kamera otomatik döngü - sadece kayıt sırasında
+  useEffect(() => {
+    let thermalInterval;
+    if (isRecording) {
+      thermalInterval = setInterval(() => {
+        setCurrentThermalImage(prev => (prev % 4) + 1);
+      }, 3000); // Her 3 saniyede bir değiş
+    }
+    
+    return () => {
+      if (thermalInterval) clearInterval(thermalInterval);
+    };
+  }, [isRecording]);
+
+  // Pi kamera otomatik döngü - sadece kayıt sırasında
+  useEffect(() => {
+    let piInterval;
+    if (isRecording) {
+      piInterval = setInterval(() => {
+        setCurrentPiImage(prev => (prev % 2) + 1);
+      }, 4000); // Her 4 saniyede bir değiş
+    }
+    
+    return () => {
+      if (piInterval) clearInterval(piInterval);
+    };
+  }, [isRecording]);
 
   // Manuel görüntü alma - sadece kayıt sırasında
   const captureImage = () => {
@@ -33,16 +77,16 @@ export default function CameraDataScreen({navigation}) {
       const normalData = {
         id: `normal_${Date.now()}`,
         timestamp: timestamp,
-          imageUri: `https://picsum.photos/400/300?random=${Date.now()}`,
+        imageUri: `picam_${currentPiImage}.jpeg`,
         type: 'normal',
-          status: 'active',
-        };
+        status: 'active',
+      };
       
       // Termal kamera görüntüsü
       const thermalData = {
         id: `thermal_${Date.now()}`,
         timestamp: timestamp,
-        imageUri: `https://picsum.photos/400/300?random=${Date.now() + 1}`,
+        imageUri: `termal_${currentThermalImage}.jpeg`,
         type: 'thermal',
         status: 'active',
       };
@@ -72,7 +116,22 @@ export default function CameraDataScreen({navigation}) {
   };
 
   const openFullScreen = (imageUri, imageType) => {
-    setFullScreenImage({ uri: imageUri, type: imageType });
+    if (imageType === 'thermal') {
+      // Termal görüntüler için require edilen görüntüyü kullan
+      setFullScreenImage({ 
+        uri: thermalImages[currentThermalImage - 1], 
+        type: imageType 
+      });
+    } else if (imageType === 'normal') {
+      // Pi kamera görüntüleri için require edilen görüntüyü kullan
+      setFullScreenImage({ 
+        uri: piImages[currentPiImage - 1], 
+        type: imageType 
+      });
+    } else {
+      // Diğer görüntüler için string URI kullan
+      setFullScreenImage({ uri: imageUri, type: imageType });
+    }
     setShowFullScreen(true);
   };
 
@@ -149,23 +208,24 @@ export default function CameraDataScreen({navigation}) {
               <Text style={styles.liveViewTitle}>Pi Kamera</Text>
               <TouchableOpacity 
                 style={styles.liveViewFrame}
-                onPress={() => normalCameraData.length > 0 && openFullScreen(normalCameraData[0].imageUri, 'normal')}
+                onPress={() => openFullScreen(piImages[currentPiImage - 1], 'normal')}
                 activeOpacity={0.8}>
-                {normalCameraData.length > 0 ? (
-                  <Image
-                    source={{ uri: normalCameraData[0].imageUri }}
-                    style={styles.liveImage}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <View style={styles.noImageContainer}>
-                    <Text style={styles.noImageText}>Görüntü alınmadı</Text>
-                  </View>
-                )}
+                <Image
+                  source={piImages[isRecording ? currentPiImage - 1 : 0]}
+                  style={styles.liveImage}
+                  resizeMode="cover"
+                />
                 {isRecording && (
                   <View style={styles.recordingIndicator}>
                     <View style={styles.recordingDot} />
                     <Text style={styles.recordingText}>KAYIT</Text>
+                  </View>
+                )}
+                {isRecording && (
+                  <View style={styles.piImageIndicator}>
+                    <Text style={styles.piImageText}>
+                      Görüntü {currentPiImage}/2
+                    </Text>
                   </View>
                 )}
                 <View style={styles.fullScreenHint}>
@@ -180,29 +240,30 @@ export default function CameraDataScreen({navigation}) {
               <Text style={styles.liveViewTitle}>Termal Kamera</Text>
               <TouchableOpacity 
                 style={styles.liveViewFrame}
-                onPress={() => thermalCameraData.length > 0 && openFullScreen(thermalCameraData[0].imageUri, 'thermal')}
+                onPress={() => openFullScreen(thermalImages[currentThermalImage - 1], 'thermal')}
                 activeOpacity={0.8}>
-                {thermalCameraData.length > 0 ? (
-                  <Image
-                    source={{ uri: thermalCameraData[0].imageUri }}
-                    style={styles.liveImage}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <View style={styles.noImageContainer}>
-                    <Text style={styles.noImageText}>Görüntü alınmadı</Text>
-                  </View>
-                )}
+                <Image
+                  source={thermalImages[isRecording ? currentThermalImage - 1 : 0]}
+                  style={styles.liveImage}
+                  resizeMode="cover"
+                />
                 {isRecording && (
                   <View style={styles.recordingIndicator}>
                     <View style={styles.recordingDot} />
                     <Text style={styles.recordingText}>KAYIT</Text>
                   </View>
                 )}
+                {isRecording && (
+                  <View style={styles.thermalImageIndicator}>
+                    <Text style={styles.thermalImageText}>
+                      Görüntü {currentThermalImage}/4
+                    </Text>
+                  </View>
+                )}
                 <View style={styles.fullScreenHint}>
                   <Ionicons name="expand" size={20} color="#fff" />
                   <Text style={styles.fullScreenHintText}>Tam ekran için dokunun</Text>
-              </View>
+                </View>
               </TouchableOpacity>
             </View>
 
@@ -226,7 +287,7 @@ export default function CameraDataScreen({navigation}) {
                       onPress={() => openFullScreen(data.imageUri, data.type)}
                       activeOpacity={0.8}>
                     <Image
-                      source={{ uri: data.imageUri }}
+                      source={data.type === 'normal' ? piImages[0] : thermalImages[0]}
                       style={styles.historyImage}
                       resizeMode="cover"
                     />
@@ -271,7 +332,7 @@ export default function CameraDataScreen({navigation}) {
           {fullScreenImage && (
             <View style={styles.fullScreenImageContainer}>
               <Image
-                source={{ uri: fullScreenImage.uri }}
+                source={fullScreenImage.uri}
                 style={styles.fullScreenImage}
                 resizeMode="contain"
               />
@@ -282,6 +343,16 @@ export default function CameraDataScreen({navigation}) {
                 <Text style={styles.fullScreenTimestamp}>
                   {new Date().toLocaleTimeString()}
                 </Text>
+                {fullScreenImage.type === 'thermal' && isRecording && (
+                  <Text style={styles.fullScreenTimestamp}>
+                    Görüntü {currentThermalImage}/4
+                  </Text>
+                )}
+                {fullScreenImage.type === 'normal' && isRecording && (
+                  <Text style={styles.fullScreenTimestamp}>
+                    Görüntü {currentPiImage}/2
+                  </Text>
+                )}
               </View>
             </View>
           )}
@@ -583,5 +654,33 @@ const styles = StyleSheet.create({
   fullScreenTimestamp: {
     color: '#ccc',
     fontSize: 14,
+  },
+  thermalImageIndicator: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  thermalImageText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  piImageIndicator: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  piImageText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 });
