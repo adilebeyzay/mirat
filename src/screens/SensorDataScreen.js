@@ -29,16 +29,17 @@ const SensorDataScreen = () => {
     co2: 0,
     flammable: 0,
   });
-  const [esp32IP, setEsp32IP] = useState('192.168.1.100'); // ESP32 gerçek IP adresi
+  const [esp32IP, setEsp32IP] = useState('192.168.1.142'); // ESP32 gerçek IP adresi
   const [alternativeIPs] = useState([
-    '192.168.1.100', // ESP32 Station mode (hata mesajından)
+    '192.168.1.142', // ESP32 Station mode (hata mesajından)
+    '192.168.1.100', // ESP32 Station mode (eski)
     '192.168.4.1',   // ESP32 AP mode
     '192.168.1.101', // Alternatif
     '192.168.0.100', // Alternatif
     '10.0.0.100'     // Alternatif
   ]);
-  const [alternativePorts] = useState([81, 80, 8080, 3000, 5000]);
-  const [websocketPort, setWebsocketPort] = useState(81); // ESP32 WebSocket port
+  const [alternativePorts] = useState([8081, 81, 80, 8080, 3000, 5000]);
+  const [websocketPort, setWebsocketPort] = useState(8081); // ESP32 WebSocket port
   const [connectionStatus, setConnectionStatus] = useState('ESP32 bağlantısı yok');
   const [lastError, setLastError] = useState('');
   const [demoMode, setDemoMode] = useState(false);
@@ -236,7 +237,7 @@ const SensorDataScreen = () => {
           const testUrl = `http://${ip}:${port}`;
           const response = await fetch(testUrl, {
             method: 'GET',
-            timeout: 2000
+            timeout: 10000
           });
           
           if (response.ok || response.status === 400) {
@@ -280,7 +281,7 @@ const SensorDataScreen = () => {
       
       const response = await fetch(testUrl, {
         method: 'GET',
-        timeout: 5000
+        timeout: 15000
       });
       
       // HTTP 400 = ESP32 erişilebilir ama HTTP isteği beklenmiyor
@@ -472,8 +473,8 @@ const SensorDataScreen = () => {
             <Text style={styles.helpTitle}>Bağlantı Sorunu Çözümleri:</Text>
             <Text style={styles.helpText}>• ESP32'nin açık olduğundan emin olun</Text>
             <Text style={styles.helpText}>• Telefonunuz ESP32'nin WiFi ağına bağlı olmalı</Text>
-            <Text style={styles.helpText}>• ESP32 IP adresi: 192.168.4.1 (varsayılan)</Text>
-            <Text style={styles.helpText}>• WebSocket port: 81 (varsayılan)</Text>
+            <Text style={styles.helpText}>• ESP32 IP adresi: 192.168.1.142 (güncel)</Text>
+            <Text style={styles.helpText}>• WebSocket port: 8081 (güncel)</Text>
             <Text style={styles.helpText}>• ESP32'de WebSocket sunucusu çalışıyor olmalı</Text>
           </View>
       </View>
@@ -730,8 +731,8 @@ const SensorDataScreen = () => {
           <Text style={styles.requirementDescription}>
             • WebSocket sunucusu çalıştırmalı{'\n'}
             • Sensör verilerini toplamalı{'\n'}
-            • 192.168.1.100 IP adresinde erişilebilir olmalı{'\n'}
-            • Port 81'de WebSocket bağlantısı kabul etmeli
+            • 192.168.1.142 IP adresinde erişilebilir olmalı{'\n'}
+            • Port 8081'de WebSocket bağlantısı kabul etmeli
           </Text>
         </View>
 
